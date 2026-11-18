@@ -43,6 +43,15 @@ public:
   // Load configuration from EEPROM (main config)
   bool loadConfigFromEEPROM(DeviceConfig& config) const;
   
+  // Save configuration to EEPROM at specific address
+  void saveConfigToEEPROM(const DeviceConfig& config, int address);
+  
+  // Load configuration from EEPROM at specific address
+  bool loadConfigFromEEPROM(DeviceConfig& config, int address) const;
+  
+  // Clear main configuration from EEPROM
+  void clearMainConfig();
+  
 private:
   ESP8266WebServer _server;
   DNSServer _dnsServer;

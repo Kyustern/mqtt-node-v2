@@ -70,7 +70,8 @@
 // EEPROM CONFIGURATION
 // =============================================================================
 
-#define EEPROM_BACKUP_ADDRESS     0
+#define EEPROM_CONFIG_ADDRESS     0
+#define EEPROM_BACKUP_ADDRESS     512  // Separate address for backup config
 #define EEPROM_MAX_SIZE           4096  // ESP8266 EEPROM size
 
 // =============================================================================

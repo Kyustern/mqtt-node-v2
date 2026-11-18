@@ -54,7 +54,13 @@ void handleReboot() {
 // Callback for clean reboot
 void handleRebootClean() {
   DEBUG_PRINTLN(F("Saving backup and rebooting to Portal Mode..."));
+  
+  // Save current config to backup address
   portalService.saveBackupConfig(currentConfig);
+  
+  // Clear main config to force Portal mode on next boot
+  portalService.clearMainConfig();
+  
   delay(100);
   ESP.restart();
 }

@@ -60,26 +60,26 @@ void PortalService::loop() {
 
 // Save current configuration to EEPROM backup
 void PortalService::saveBackupConfig(const DeviceConfig& config) {
-  saveConfigToEEPROM(config);
+  saveConfigToEEPROM(config, EEPROM_BACKUP_ADDRESS);
   DEBUG_PRINTLN(F("Backup config saved to EEPROM"));
 }
 
-// Load backup configuration from EEPROM
+// Load backup configuration from EEPROM backup address
 bool PortalService::loadBackupConfig(DeviceConfig& config) const {
-  return loadConfigFromEEPROM(config);
+  return loadConfigFromEEPROM(config, EEPROM_BACKUP_ADDRESS);
 }
 
 // Clear backup configuration from EEPROM
 void PortalService::clearBackupConfig() {
   DeviceConfig empty;
-  saveConfigToEEPROM(empty);
+  saveConfigToEEPROM(empty, EEPROM_BACKUP_ADDRESS);
   DEBUG_PRINTLN(F("Backup config cleared"));
 }
 
 // Check if backup configuration exists
 bool PortalService::hasBackupConfig() const {
   DeviceConfig config;
-  return loadConfigFromEEPROM(config) && config.isValid();
+  return loadConfigFromEEPROM(config, EEPROM_BACKUP_ADDRESS) && config.isValid();
 }
 
 // Setup routes
@@ -321,8 +321,8 @@ String PortalService::generateConfigForm(const DeviceConfig& currentConfig,
   return html;
 }
 
-// Save configuration to EEPROM
-void PortalService::saveConfigToEEPROM(const DeviceConfig& config) {
+// Save configuration to EEPROM at specified address
+void PortalService::saveConfigToEEPROM(const DeviceConfig& config, int address) {
   DynamicJsonDocument doc(512);
   
   JsonObject wifiObj = doc.createNestedObject("wifi");
@@ -343,20 +343,27 @@ void PortalService::saveConfigToEEPROM(const DeviceConfig& config) {
   String json;
   serializeJson(doc, json);
   
-  // Write to EEPROM
+  // Write to EEPROM at specified address
   for (size_t i = 0; i < json.length(); i++) {
-    EEPROM.write(i, json.charAt(i));
+    EEPROM.write(address + i, json.charAt(i));
   }
-  EEPROM.write(json.length(), '\0'); // Null terminator
+  EEPROM.write(address + json.length(), '\0'); // Null terminator
   EEPROM.commit();
   
-  DEBUG_PRINT(F("Config saved to EEPROM ("));
+  DEBUG_PRINT(F("Config saved to EEPROM at "));
+  DEBUG_PRINT(address);
+  DEBUG_PRINT(F(" ("));
   DEBUG_PRINT(json.length());
   DEBUG_PRINTLN(F(" bytes)"));
 }
 
-// Load configuration from EEPROM
-bool PortalService::loadConfigFromEEPROM(DeviceConfig& config) const {
+// Save configuration to main EEPROM address (backward compatible)
+void PortalService::saveConfigToEEPROM(const DeviceConfig& config) {
+  saveConfigToEEPROM(config, EEPROM_CONFIG_ADDRESS);
+}
+
+// Load configuration from EEPROM at specified address
+bool PortalService::loadConfigFromEEPROM(DeviceConfig& config, int address) const {
   config.clear();
   
   EEPROM.begin(EEPROM_MAX_SIZE);
@@ -367,7 +374,7 @@ bool PortalService::loadConfigFromEEPROM(DeviceConfig& config) const {
   size_t i = 0;
   
   while (i < EEPROM_MAX_SIZE) {
-    c = EEPROM.read(i);
+    c = EEPROM.read(address + i);
     if (c == '\0') break;
     if (c != 0xFF) { // Skip uninitialized EEPROM
       json += c;
@@ -375,13 +382,16 @@ bool PortalService::loadConfigFromEEPROM(DeviceConfig& config) const {
     i++;
   }
   
+  // Debug log with address
+  DEBUG_PRINT(F("Loaded config from EEPROM at "));
+  DEBUG_PRINT(address);
+  DEBUG_PRINT(F(": "));
+  DEBUG_PRINTLN(json);
+  
   if (json.isEmpty()) {
     DEBUG_PRINTLN(F("No config in EEPROM"));
     return false;
   }
-  
-  DEBUG_PRINT(F("Loaded config from EEPROM: "));
-  DEBUG_PRINTLN(json);
   
   // Parse JSON
   DynamicJsonDocument doc(512);
@@ -412,4 +422,16 @@ bool PortalService::loadConfigFromEEPROM(DeviceConfig& config) const {
   }
   
   return config.isValid();
+}
+
+// Load configuration from main EEPROM address (backward compatible)
+bool PortalService::loadConfigFromEEPROM(DeviceConfig& config) const {
+  return loadConfigFromEEPROM(config, EEPROM_CONFIG_ADDRESS);
+}
+
+// Clear main configuration from EEPROM
+void PortalService::clearMainConfig() {
+  DeviceConfig empty;
+  saveConfigToEEPROM(empty, EEPROM_CONFIG_ADDRESS);
+  DEBUG_PRINTLN(F("Main config cleared from EEPROM"));
 }
