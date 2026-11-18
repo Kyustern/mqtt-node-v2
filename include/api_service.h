@@ -50,6 +50,7 @@ private:
   void setupRoutes();
   
   // API Endpoint Handlers
+  void handleIndex();
   void handleTime();
   void handleCurrent();
   void handleData();

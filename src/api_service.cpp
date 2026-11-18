@@ -72,6 +72,9 @@ void APIService::setDeviceInfoCallback(DeviceInfo (*callback)()) {
 
 // Setup routes
 void APIService::setupRoutes() {
+  // Root index page
+  _server.on("/", HTTP_GET, [this]() { handleIndex(); });
+  
   // GET endpoints
   _server.on("/time", HTTP_GET, [this]() { handleTime(); });
   _server.on("/current", HTTP_GET, [this]() { handleCurrent(); });
@@ -86,6 +89,33 @@ void APIService::setupRoutes() {
   
   // Enable CORS
   _server.enableCORS(true);
+}
+
+// Handle GET /
+void APIService::handleIndex() {
+  String html = F("<html><head><title>ESP8266 API</title>");
+  html += F("<meta charset='utf-8'>");
+  html += F("<style>");
+  html += F("body { background: #111; color: #0f0; font-family: 'Courier New', monospace; margin: 20px; }");
+  html += F("a { color: #0af; text-decoration: none; }");
+  html += F("a:hover { text-decoration: underline; }");
+  html += F("h1 { margin: 0 0 20px 0; }");
+  html += F("pre { margin: 0; }");
+  html += F("</style></head><body>");
+  html += F("<h1>ESP8266 MQTT Node API</h1>");
+  html += F("<pre>");
+  html += F("GET  /time        - Device uptime in millis()\n");
+  html += F("GET  /current     - Latest sensor reading\n");
+  html += F("GET  /data        - All sensor readings (JSON array)\n");
+  html += F("GET  /info        - Device information and status\n");
+  html += F("\n");
+  html += F("POST /led         - Control LED strip (JSON: {r,g,b,w,brightness,enabled})\n");
+  html += F("POST /reboot      - Reboot device\n");
+  html += F("POST /reboot-clean - Reboot to portal mode\n");
+  html += F("POST /ota         - Trigger OTA update\n");
+  html += F("</pre>");
+  html += F("</body></html>");
+  _server.send(200, "text/html", html);
 }
 
 // Handle GET /time
